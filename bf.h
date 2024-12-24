@@ -18,7 +18,6 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
 #include <stdio.h>
 
 
@@ -43,22 +42,33 @@ typedef struct {
 } bf_s;
 
 /*
- * The lowest 4 bits of `base` are always 0.
+ * Structure useful for formatting nearby bytes of the byte that data pointer
+ * points.
  *
- * `current_offset` is in [0, 15].
- * (bf_byte_t *) (base + current_offset) is the `current` pointer.
+ * Firstly, calculate `b` to be `current` - (`current` mod 16), where `current`
+ * is member of the `bf_s` object.
  *
- * `begin_offset` is in [0, 15], most times 0.
+ * then `base_ptr`:
+ *   if `b` is less than `begin` member in the `bf_s` object (thus pointing an
+ *   invalid address), then `base_ptr` is assigned `begin`. otherwise (`b`
+ *   points a valid address), `base_ptr` is assigned `b`.
+ * then `begin_offset`:
+ *   assigned `base_ptr` mod 16.
+ * then `current_offset`:
+ *   assigned `current` mod 16.
+ * then `end_offset`:
+ *   (like the `begin_offset`) assigned 16 if the address there is valid.
+ *   Otherwise it'll be less than 16.
+ *
+ * `begin_offset` is in [0, 15], most times 0, but higher than 0 if
  * `end_offset` is in [1, 16], most times 16. Also past-the-end style.
- * [base + begin_offset, base + end_offset) indicates valid byte position
- * range in these nearby 16 bytes, because BF array (buffer) doesn't always
- * begin and end at a position whose lowest 4 bits are all zero.
+ * `current_offset` is in [0, 15].
  *
- * In a word, casting a (base + k) (k is in [0, 16)) may cause UB. The k should
- * only be in [begin_offset, end_offset).
+ * However, pointing to an invalid address is UB in C. So the actual code is
+ * different from what is said above.
  */
 typedef struct {
-    size_t            base;        /* size_t is used as uintptr_t. */
+    const bf_byte_t  *base_ptr;
     int               begin_offset;
     int               end_offset;  /* past-the-end */
     int               current_offset;
@@ -75,7 +85,7 @@ typedef struct {
 int bf_init(bf_s *ths, bf_byte_t *begin, bf_byte_t *end);
 
 /*
- * Find the 16 bytes adjacent to the `current` pointer,
+ * Find the 16 bytes near the `current` pointer,
  * and store their address in *out.
  *
  * See document of structure `bf_nearby_16_s`.
@@ -127,7 +137,7 @@ int bf_run_stream(bf_s *ths, const char *command, bf_reader_t reader,
 
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 

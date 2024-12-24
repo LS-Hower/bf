@@ -29,8 +29,16 @@
 #define BF_TEST_INTERPRETER_BUFFER_SIZE  60
 #endif
 
-#ifndef BF_TEST_STRING_BUFFER_SIZE
-#define BF_TEST_STRING_BUFFER_SIZE  300
+#ifndef BF_TEST_MEMORY_BUFFER_SIZE
+#define BF_TEST_MEMORY_BUFFER_SIZE  300
+#endif
+
+#ifndef BF_TEST_MEMORY_INPUT
+#define BF_TEST_MEMORY_INPUT  "helloworld\n"
+#endif
+
+#ifndef BF_TEST_MEMORY_INPUT_SIZE
+#define BF_TEST_MEMORY_INPUT_SIZE  (sizeof BF_TEST_MEMORY_INPUT)
 #endif
 
 #define BF_FORMAT_16_RESULT_TEMPLATE \
@@ -57,10 +65,11 @@ static const int  bf_format_byte_begin_indices[16] =
                                       BF_FORMAT_BYTE_BEGIN_INDICES_INITIALIZER;
 
 
-/* Main function. Call bf_test_memory() or bf_test_interpreter() here. */
+/* Main function. Call bf_test_memory() and/or bf_test_interpreter() here. */
 int
 main(void)
 {
+    bf_test_memory();
     bf_test_interpreter();
 
     return 0;
@@ -75,18 +84,24 @@ static void
 bf_test_memory(void)
 {
     bf_s         game;
-    const char  *input_memory;
-    bf_byte_t    buf[BF_TEST_STRING_BUFFER_SIZE];
+    bf_byte_t    buf[BF_TEST_MEMORY_BUFFER_SIZE];
 
-    input_memory = "helloworld\n";
 
-    memset(buf, 0x00, BF_TEST_STRING_BUFFER_SIZE);
+    /* Clear buffer content. */
+    memset(buf, 0x00, BF_TEST_MEMORY_BUFFER_SIZE);
 
-    bf_init(&game, buf, buf+BF_TEST_STRING_BUFFER_SIZE);
+    bf_init(&game, buf, buf + BF_TEST_MEMORY_BUFFER_SIZE);
 
+    /* Convert lowercase letters to uppercase ones. */
     bf_run_memory(&game, ",----------[----------------------.,----------]",
-                  (bf_byte_t *) input_memory, strlen(input_memory),
+                  (bf_byte_t *) BF_TEST_MEMORY_INPUT,
+                  BF_TEST_MEMORY_INPUT_SIZE,
                   (bf_handler_t) &fputc, (void *) stdout);
+
+    /* Print an LF. */
+    bf_run_memory(&game, "[-]++++++++++.", (bf_byte_t *) BF_TEST_MEMORY_INPUT,
+                  BF_TEST_MEMORY_INPUT_SIZE, (bf_handler_t) &fputc,
+                  (void *) stdout);
 }
 
 
@@ -97,6 +112,7 @@ bf_test_interpreter(void)
     bf_s  game;
     char  cmd[BF_TEST_INTERPRETER_COMMAND_SIZE];
 
+    /* Only use u.s.buf. */
     union {
         struct {
             bf_byte_t dummy0;
@@ -112,6 +128,7 @@ bf_test_interpreter(void)
         double double_dummy;  /* Force `s` to align. */
     } u;
 
+    /* Clear buffer content. */
     memset(u.s.buf, 0x00, BF_TEST_INTERPRETER_BUFFER_SIZE);
 
     bf_init(&game, u.s.buf, u.s.buf + BF_TEST_INTERPRETER_BUFFER_SIZE);
@@ -121,21 +138,46 @@ bf_test_interpreter(void)
     printf("Enter BF commands. Simulate an EOF to quit.\n");
 
     for ( ;; ) {
+        int             err;
         bf_nearby_16_s  nearby;
 
         bf_nearby_16(&game, &nearby);
 
-        printf("%zx: %s\n", nearby.base, bf_format_16(&nearby));
+        printf("%p: %s\n", nearby.base_ptr, bf_format_16(&nearby));
 
-        printf("(BF) ");  /* Prompt. */
+        /* Prompt. */
+        printf("(BF) ");
         fgets(cmd, BF_TEST_INTERPRETER_COMMAND_SIZE, stdin);
 
+
         if (feof(stdin)) {
+            /* EOF to terminate. */
             break;
         }
 
-        bf_run_file(&game, cmd, stdin, (bf_handler_t) &fputc, (void *) stdout);
+        err = bf_run_file(&game, cmd, stdin, (bf_handler_t) &fputc,
+                                                              (void *) stdout);
+
+        switch (err) {
+        case 0:
+            /* Normal. */
+            break;
+
+        case -1:
+            perror("failed to open file");
+            break;
+
+        case -2:
+            fprintf(stderr, "Error: bracket nested incorrectly\n");
+            break;
+
+        default:
+            fprintf(stderr, "Error: unrecognized error code: %d\n", err);
+            break;
+        }
     }
+
+    return;
 }
 
 
@@ -148,16 +190,23 @@ bf_test_interpreter(void)
 static const char *
 bf_format_16(const bf_nearby_16_s *nearby)
 {
-    int  i;
+    int  i, valid_bytes_num;
 
+    /* Copy the template string to result buffer. */
     memcpy(bf_format_16_result, BF_FORMAT_16_RESULT_TEMPLATE,
                                                      BF_FORMAT_16_RESULT_SIZE);
 
-    for (i = nearby->begin_offset; i < nearby->end_offset; ++i) {
-        sprintf(&bf_format_16_result[bf_format_byte_begin_indices[i]], "%02X",
-                                           * (bf_byte_t *) (nearby->base + i));
+    valid_bytes_num = nearby->end_offset - nearby->begin_offset;
+
+    /* Format bytes. */
+    for (i = 0; i < valid_bytes_num; ++i) {
+        int  ind_in_str;
+
+        ind_in_str = bf_format_byte_begin_indices[nearby->begin_offset + i];
+        sprintf(&bf_format_16_result[ind_in_str], "%02X", nearby->base_ptr[i]);
     }
 
+    /* The byte pointed by data pointed is wrapped around by '[]'.  */
     bf_format_16_result[
                bf_format_byte_begin_indices[nearby->current_offset] - 1] = '[';
     bf_format_16_result[

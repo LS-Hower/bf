@@ -33,7 +33,7 @@ typedef struct {
 
 
 static const char *bf_find_right_square_bracket(const char *in_op);
-static const char *bf_find_incorrect_square_bracket(const char *s);
+static int bf_is_bracket_nested_incorrectly(const char *s);
 static int bf_reader_memory(void *stream);
 
 
@@ -73,8 +73,8 @@ bf_find_right_square_bracket(const char *pc)
  * Find the position of the first incorrect bracket nesting, and return it.
  * Return NULL if bracket nesting is correct.
  */
-static const char *
-bf_find_incorrect_square_bracket(const char *cmd)
+int
+bf_is_bracket_nested_incorrectly(const char *cmd)
 {
     int  depth;
 
@@ -83,10 +83,11 @@ bf_find_incorrect_square_bracket(const char *cmd)
         if ((*cmd == '[' && ++depth > BF_MAX_BRACKET_DEPTH)
             || (*cmd == ']' && --depth < 0))
         {
-            return cmd;
+            return 1;
         }
     }
-    return NULL;
+
+    return (depth != 0);
 }
 
 
@@ -122,13 +123,15 @@ bf_run_stream(bf_s *ths, const char *command, bf_reader_t reader,
 
     stack_top = left_bracket_position_stack;
 
-    if (bf_find_incorrect_square_bracket(command) != NULL) {
+    if (bf_is_bracket_nested_incorrectly(command)) {
+        /* Bracket nested incorrectly. */
         return -2;
     }
 
+    /* Interpret the BF code. This is the core part of the code. */
     for (program_counter = command;
-        *program_counter != '\0';
-        ++program_counter)
+         *program_counter != '\0';
+         ++program_counter)
     {
         switch (*program_counter) {
         case '+':
@@ -252,6 +255,7 @@ bf_run_filename(bf_s *ths, const char *command, const char *filename,
 
     file = fopen(filename, "rb");
 
+    /* Cannot open file. */
     if (file == NULL) {
         return -1;
     }
@@ -268,37 +272,29 @@ bf_run_filename(bf_s *ths, const char *command, const char *filename,
 int
 bf_nearby_16(const bf_s *ths, bf_nearby_16_s *out)
 {
-    int     begin_offset, current_offset, end_offset, i;
-    size_t  base, begin, current, end;
+    const bf_byte_t  *ptr;
 
-    begin   = (size_t) ths->begin;
-    current = (size_t) ths->current;
-    end     = (size_t) ths->end;
-    base    = current & ~ (size_t) 0xfu;
+    ptr = ths->current;
+    out->current_offset = (int) ptr & 0xf;
 
-    current_offset = (int) (current - base);
-
-    begin_offset = -1;
-
-    for (i = 0; i < 16; ++i) {
-
-        if (!(begin <= base + i && base + i < end)) {
-            continue;
-        }
-
-        if (begin_offset < 0) {
-            begin_offset = i;
-        }
-
-        end_offset = i;
+    for (ptr = ths->current;
+         ths->begin < ptr && (((int) ptr & 0xf) != 0);
+         --ptr)
+    {
+        /* void */
     }
+    out->base_ptr = ptr;
+    out->begin_offset = (int) ptr & 0xf;
 
-    ++end_offset;
+    for (ptr = ths->current;
+         ptr < (ths->end - 1) && (((int) ptr & 0xf) != 0xf);
+         ++ptr)
+    {
+        /* void */
+    }
+    out->end_offset = (int) ptr & 0xf;
 
-    out->base           = base;
-    out->begin_offset   = begin_offset;
-    out->current_offset = current_offset;
-    out->end_offset     = end_offset;
+    ++out->end_offset;
 
     return 0;
 }

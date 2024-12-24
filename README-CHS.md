@@ -23,7 +23,7 @@ typedef struct {
 } bf_s;
 
 typedef struct {
-    size_t            base;        /* size_t is used as uintptr_t. */
+    const bf_byte_t  *base_ptr;
     int               begin_offset;
     int               end_offset;  /* past-the-end */
     int               current_offset;
