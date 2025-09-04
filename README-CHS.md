@@ -16,6 +16,9 @@
 接口如下：
 
 ```C
+typedef unsigned char bf_byte_t;
+typedef int (*bf_reader_t)(void *stream);
+typedef int (*bf_handler_t)(int b, void *stream);
 typedef struct {
     bf_byte_t        *current;
     const bf_byte_t  *begin;
@@ -40,35 +43,36 @@ int bf_run_stream(bf_s *ths, const char *command, bf_reader_t reader,
     void *in_stream, bf_handler_t handler, void *out_stream);
 ```
 
-简单地讲，`bf_s` 是类，而 `bf_run_*()` 和 `bf_show_nearby_memory()`
-函数都是它的方法。
+`bf_s` 是类， `bf_run_*()` 和 `bf_show_nearby_memory()`
+函数是成员函数（类方法）。
 
-其中 `bf_run_*()` 函数都解释执行 BF 代码。BF 代码都是字符串形式传入的。
+其中 `bf_run_*()` 函数都解释执行 BF 代码。BF 代码以字符串形式传入。
 
 * 函数 `bf_run_filename()` 和 `bf_run_file()` 从文件获取输入流。
 * 函数 `bf_run_memory()` 从内存中的数组获取输入流。
-* 函数 `bf_run_stream()` 是最通用的，前三者都由它来表示。
+* 函数 `bf_run_stream()` 可以自定义输入方式，是最通用的，前三者都由它来实现。
 
 每执行一个 `.` 命令（BF 中的输出指令），就调用 `(*handler)()` 函数，
 参数就是数据指针当前所指的字节和 `out_stream`。
 
-这和 [`benhoyt/inih`](https://github.com/benhoyt/inih) 的做法是一样的。
+`bf_show_nearby_memory()` 函数用于可视化，显示当前数据指针附近的数据。
 
-而 `bf_show_nearby_memory()` 函数用于可视化，显示当前数据指针附近的数据。
-
-详细文档请见头文件中的函数原型和结构体 `typedef` 处的注释。
+详细文档请见头文件中各个函数原型和 `typedef` 处的注释。
 
 
 ## 编译
 
-楼主是原始人，还不懂各种编译工具，只会敲 `gcc` 命令。
+库:
+- `bf.c`
 
-如果只将 `bf_test.c` 与 `bf.c` 两个文件一起编译，
-你将得到一个简单的交互式 BF 解释器。
+解释器:
+- 库
+- `bf_repl.c`
 
-也可以不要 `bf_test.c`，而只将 `bf.c` 与你的代码一起编译，
-你的代码里再包含 `bf.h`，你便能够使用里面的类型和函数。
+若只将 `bf.c` 和 `bf_repl.c` 一起编译，可以得到一个解释器。
 
+也可以忽略 `bf_repl.c` ，而在自己的代码中包含 `bf.h`
+，则可以将这里的代码作为库使用。
 
 ## 历史
 

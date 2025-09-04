@@ -17,6 +17,9 @@ Some interfaces and some documents are modeled after repository
 Interface is as below:
 
 ```C
+typedef unsigned char bf_byte_t;
+typedef int (*bf_reader_t)(void *stream);
+typedef int (*bf_handler_t)(int b, void *stream);
 typedef struct {
     bf_byte_t        *current;
     const bf_byte_t  *begin;
@@ -41,38 +44,40 @@ int bf_run_stream(bf_s *ths, const char *command, bf_reader_t reader,
     void *in_stream, bf_handler_t handler, void *out_stream);
 ```
 
-In short, `bf_s` is the class. Functions `bf_run_*()` and
-`bf_show_nearby_memory()` are methods.
+`bf_s` is a class. Functions `bf_run_*()` and `bf_show_nearby_memory()` are
+member functions (methods).
 
 Funtions `bf_run_*()` interpret and execute BF code, which is passed as string:
 
 * Functions `bf_run_filename()` and `bf_run_file()` get in-stream from file.
-* Function `bf_run_memory()` get in-stream from arrays in memory.
-* Function `bf_run_stream()` is the most general one. The first three are
-implemented through it.
+* Function `bf_run_memory()` get in-stream from an array in memory.
+* Function `bf_run_stream()` enables user to customize input method. It is the
+most general one. The first three are implemented through it.
 
-Each time a output command `.` is executed, call the callback `(*handler)()`,
-with arguments: byte currently pointed to by the data pointer and `out_stream`.
+Each time a command `.` (output command in BF) is executed, call the callback
+function `(*handler)()`, with arguments: byte currently pointed to by the data
+pointer and `out_stream`.
 
-This is the same as [`benhoyt/inih`](https://github.com/benhoyt/inih).
+`bf_show_nearby_memory()` function is used for visualization, showing the data
+around the current data pointer.
 
-and `bf_show_nearby_memory()` function is used for visualization, showing
-the data around the current data pointer.
-
-See the comments in the function prototypes and structure `typedef`s in the
-header file for detailed documentation.
+For detailed documentation, see the comments in the function prototypes and
+`typedef`s in the header file .
 
 
 ## Compiling
 
-I only kown command `gcc`. I don't know much about various compilating tools.
+library:
+- `bf.c`
 
-If you only compile the two files `bf_test.c` and `bf.c` together, you will get
-a simple interactive BF interpreter.
+interpreter:
+- library
+- `bf_repl.c`
 
-Also you can ignore `bf_test.c`, but only compile `bf.c` with your code, and
-include `bf.h` in your code, then you can use the types and functions in it.
+if you only compile `bf.c` and `bf_repl.c` together, you get an interpreter.
 
+You can also ignore `bf_repl.c` and include `bf.h` in your own code, and use
+the code here as library.
 
 ## History
 
