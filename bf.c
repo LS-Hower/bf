@@ -20,11 +20,6 @@
 #include "bf.h"
 
 
-#ifndef BF_MAX_BRACKET_DEPTH
-#define BF_MAX_BRACKET_DEPTH  300
-#endif
-
-
 /* Used by bf_run_memory() to keep track of byte getting state. */
 typedef struct {
     const bf_byte_t  *ptr;

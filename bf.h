@@ -21,6 +21,11 @@ extern "C" {
 #include <stdio.h>
 
 
+#ifndef BF_MAX_BRACKET_DEPTH
+#define BF_MAX_BRACKET_DEPTH  300
+#endif
+
+
 /* Data type of the memory of the virtual machine. */
 typedef unsigned char bf_byte_t;
 
