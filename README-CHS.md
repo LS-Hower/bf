@@ -22,16 +22,10 @@ typedef struct {
     const bf_byte_t  *end;  /* past-the-end */
 } bf_s;
 
-typedef struct {
-    const bf_byte_t  *base_ptr;
-    int               begin_offset;
-    int               end_offset;  /* past-the-end */
-    int               current_offset;
-} bf_nearby_16_s;
-
 int bf_init(bf_s *ths, bf_byte_t *begin, bf_byte_t *end);
 
-int bf_nearby_16(const bf_s *ths, bf_nearby_16_s *out);
+void bf_show_nearby_memory(const bf_s *ths, size_t on_the_left,
+    size_t on_the_right);
 
 int bf_run_filename(bf_s *ths, const char *command,
     const char *filename, bf_handler_t handler, void *out_stream);
@@ -46,7 +40,8 @@ int bf_run_stream(bf_s *ths, const char *command, bf_reader_t reader,
     void *in_stream, bf_handler_t handler, void *out_stream);
 ```
 
-简单地讲，`bf_s` 是类，而 `bf_run_*()` 和 `bf_nearby_16()` 函数都是它的方法。
+简单地讲，`bf_s` 是类，而 `bf_run_*()` 和 `bf_show_nearby_memory()`
+函数都是它的方法。
 
 其中 `bf_run_*()` 函数都解释执行 BF 代码。BF 代码都是字符串形式传入的。
 
@@ -59,8 +54,7 @@ int bf_run_stream(bf_s *ths, const char *command, bf_reader_t reader,
 
 这和 [`benhoyt/inih`](https://github.com/benhoyt/inih) 的做法是一样的。
 
-而 `bf_nearby_16()` 函数使用了另一个 `bf_nearby_16_s` 类来表示结果，
-这个是方便用户对数据指针附近的 16 个字节做格式化，从而看到内存布局的。
+而 `bf_show_nearby_memory()` 函数用于可视化，显示当前数据指针附近的数据。
 
 详细文档请见头文件中的函数原型和结构体 `typedef` 处的注释。
 

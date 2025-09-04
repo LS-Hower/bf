@@ -7,6 +7,7 @@
 
 /* 2023-01-04 bfpret.c */
 /* 2024-12-18 bf_test.c */
+/* 2025-09-04 bf_repl.c */
 
 
 #if (defined _MSC_VER && !(defined _CRT_SECURE_NO_WARNINGS))
@@ -41,13 +42,6 @@
 #define BF_TEST_MEMORY_INPUT_SIZE  (sizeof BF_TEST_MEMORY_INPUT)
 #endif
 
-#define BF_FORMAT_16_RESULT_TEMPLATE \
-    " -- -- -- --  -- -- -- --  -- -- -- --  -- -- -- -- "
-#define BF_FORMAT_16_RESULT_SIZE  (sizeof BF_FORMAT_16_RESULT_TEMPLATE)
-#define BF_FORMAT_BYTE_BEGIN_INDICES_INITIALIZER {  1,  4,  7, 10, \
-                                                   14, 17, 20, 23, \
-                                                   27, 30, 33, 36, \
-                                                   40, 43, 46, 49 }
 
 #if (CHAR_BIT != 8)
 #error function bf_format_16() only works when a byte has only 8 bits.
@@ -57,12 +51,7 @@
 int main(void);
 static void bf_test_interpreter(void);
 static void bf_test_memory(void);
-static const char *bf_format_16(const bf_nearby_16_s *nearby);
 
-
-static char       bf_format_16_result[BF_FORMAT_16_RESULT_SIZE] = {0};
-static const int  bf_format_byte_begin_indices[16] =
-                                      BF_FORMAT_BYTE_BEGIN_INDICES_INITIALIZER;
 
 
 /* Main function. Call bf_test_memory() and/or bf_test_interpreter() here. */
@@ -135,20 +124,21 @@ bf_test_interpreter(void)
 
     printf("Size of buffer for command input: %d\n",
                                              BF_TEST_INTERPRETER_COMMAND_SIZE);
-    printf("Enter BF commands. Simulate an EOF to quit.\n");
+    printf("Enter BF commands. Simulate an EOF or enter \"exit\" to exit.\n");
 
     for ( ;; ) {
         int             err;
-        bf_nearby_16_s  nearby;
 
-        bf_nearby_16(&game, &nearby);
-
-        printf("%p: %s\n", nearby.base_ptr, bf_format_16(&nearby));
+        putchar('\n');
+        bf_show_nearby_memory(&game, 7, 7);
 
         /* Prompt. */
         printf("(BF) ");
         fgets(cmd, BF_TEST_INTERPRETER_COMMAND_SIZE, stdin);
 
+        if (strcmp(cmd, "exit\n") == 0) {
+            break;
+        }
 
         if (feof(stdin)) {
             /* EOF to terminate. */
@@ -178,47 +168,4 @@ bf_test_interpreter(void)
     }
 
     return;
-}
-
-
-
-/*
- * Format a static string in the form of BF_FORMAT_16_RESULT_TEMPLATE
- * (" -- -- -- --  -- -- -- --  -- -- -- --  -- -- -- -- ").
- * Return the string. Caller shouldn't change its content.
- */
-static const char *
-bf_format_16(const bf_nearby_16_s *nearby)
-{
-    int  i, valid_bytes_num;
-
-    /* Copy the template string to result buffer. */
-    memcpy(bf_format_16_result, BF_FORMAT_16_RESULT_TEMPLATE,
-                                                     BF_FORMAT_16_RESULT_SIZE);
-
-    valid_bytes_num = nearby->end_offset - nearby->begin_offset;
-
-    /* Format bytes. */
-    for (i = 0; i < valid_bytes_num; ++i) {
-        int  ind_in_str;
-
-        ind_in_str = bf_format_byte_begin_indices[nearby->begin_offset + i];
-        sprintf(&bf_format_16_result[ind_in_str], "%02X", nearby->base_ptr[i]);
-    }
-
-    /* The byte pointed by data pointed is wrapped around by '[]'.  */
-    bf_format_16_result[
-               bf_format_byte_begin_indices[nearby->current_offset] - 1] = '[';
-    bf_format_16_result[
-               bf_format_byte_begin_indices[nearby->current_offset] + 2] = ']';
-
-    /* Fill in the holes ('\0') made by sprintf as spaces (' ') */
-    for (i = 0; i < BF_FORMAT_16_RESULT_SIZE - 1; ++i) {
-
-        if (bf_format_16_result[i] == '\0') {
-            bf_format_16_result[i] = ' ';
-        }
-    }
-
-    return bf_format_16_result;
 }

@@ -264,32 +264,34 @@ bf_run_filename(bf_s *ths, const char *command, const char *filename,
 
 
 /* See doc in header file. */
-int
-bf_nearby_16(const bf_s *ths, bf_nearby_16_s *out)
+void
+bf_show_nearby_memory(const bf_s *ths, size_t on_the_left, size_t on_the_right)
 {
-    const bf_byte_t  *ptr;
+    bf_s    scanner;
+    size_t  i;
 
-    ptr = ths->current;
-    out->current_offset = (int) ptr & 0xf;
+    printf("current pointer: %p\n", ths->current);
 
-    for (ptr = ths->current;
-         ths->begin < ptr && (((int) ptr & 0xf) != 0);
-         --ptr)
-    {
-        /* void */
+    scanner = *ths;
+
+    for (i = 0; i < on_the_left; ++i) {
+        bf_run_stream(&scanner, "<", NULL, NULL, NULL, NULL);
     }
-    out->base_ptr = ptr;
-    out->begin_offset = (int) ptr & 0xf;
 
-    for (ptr = ths->current;
-         ptr < (ths->end - 1) && (((int) ptr & 0xf) != 0xf);
-         ++ptr)
-    {
-        /* void */
+    putchar(scanner.current == scanner.begin ? '|' : ' ');
+    putchar(scanner.current == ths->current ? '[' : ' ');
+
+    for (i = 0; i < (on_the_left + 1 + on_the_right) - 1; ++i) {
+        printf("%02X", (unsigned) *scanner.current);
+        putchar(scanner.current == ths->current ? ']' : ' ');
+        putchar(scanner.current == scanner.end - 1 ? '|' : ' ');
+        bf_run_stream(&scanner, ">", NULL, NULL, NULL, NULL);
+        putchar(scanner.current == ths->current ? '[' : ' ');
     }
-    out->end_offset = (int) ptr & 0xf;
 
-    ++out->end_offset;
+    printf("%02X", (unsigned) *scanner.current);
+    putchar(scanner.current == ths->current ? ']' : ' ');
+    putchar(scanner.current == scanner.end - 1 ? '|' : ' ');
 
-    return 0;
+    putchar('\n');
 }

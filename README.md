@@ -23,16 +23,10 @@ typedef struct {
     const bf_byte_t  *end;  /* past-the-end */
 } bf_s;
 
-typedef struct {
-    const bf_byte_t  *base_ptr;
-    int               begin_offset;
-    int               end_offset;  /* past-the-end */
-    int               current_offset;
-} bf_nearby_16_s;
-
 int bf_init(bf_s *ths, bf_byte_t *begin, bf_byte_t *end);
 
-int bf_nearby_16(const bf_s *ths, bf_nearby_16_s *out);
+void bf_show_nearby_memory(const bf_s *ths, size_t on_the_left,
+    size_t on_the_right);
 
 int bf_run_filename(bf_s *ths, const char *command,
     const char *filename, bf_handler_t handler, void *out_stream);
@@ -47,8 +41,8 @@ int bf_run_stream(bf_s *ths, const char *command, bf_reader_t reader,
     void *in_stream, bf_handler_t handler, void *out_stream);
 ```
 
-In short, `bf_s` is the class. Functions `bf_run_*()` and `bf_nearby_16()` are
-methods.
+In short, `bf_s` is the class. Functions `bf_run_*()` and
+`bf_show_nearby_memory()` are methods.
 
 Funtions `bf_run_*()` interpret and execute BF code, which is passed as string:
 
@@ -62,9 +56,8 @@ with arguments: byte currently pointed to by the data pointer and `out_stream`.
 
 This is the same as [`benhoyt/inih`](https://github.com/benhoyt/inih).
 
-Function `bf_nearby_16()` used a class `bf_nearby_16_s` to represent result.
-This is for the convenience of users to format the 16 bytes near the data
-pointer so that they can see the memory layout.
+and `bf_show_nearby_memory()` function is used for visualization, showing
+the data around the current data pointer.
 
 See the comments in the function prototypes and structure `typedef`s in the
 header file for detailed documentation.
