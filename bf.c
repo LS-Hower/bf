@@ -70,10 +70,10 @@ bf_find_right_square_bracket(const char *pc)
 
 
 /*
- * Find the position of the first incorrect bracket nesting, and return it.
- * Return NULL if bracket nesting is correct.
+ * Return 1 if the brackets are nested incorrectly.
+ * Otherwise, return 0.
  */
-int
+static int
 bf_is_bracket_nested_incorrectly(const char *cmd)
 {
     int  depth;
