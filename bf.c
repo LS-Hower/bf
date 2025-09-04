@@ -14,10 +14,14 @@
 #endif
 
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "bf.h"
+
+
+#define BF_BYTE_HEX_REPR_LEN  ((CHAR_BIT + 3) / 4)
 
 
 /* Used by bf_run_memory() to keep track of byte getting state. */
@@ -282,14 +286,14 @@ bf_show_nearby_memory(const bf_s *ths, size_t on_the_left, size_t on_the_right)
     putchar(scanner.current == ths->current ? '[' : ' ');
 
     for (i = 0; i < (on_the_left + 1 + on_the_right) - 1; ++i) {
-        printf("%02X", (unsigned) *scanner.current);
+        printf("%0*X", BF_BYTE_HEX_REPR_LEN, (unsigned) *scanner.current);
         putchar(scanner.current == ths->current ? ']' : ' ');
         putchar(scanner.current == scanner.end - 1 ? '|' : ' ');
         bf_run_stream(&scanner, ">", NULL, NULL, NULL, NULL);
         putchar(scanner.current == ths->current ? '[' : ' ');
     }
 
-    printf("%02X", (unsigned) *scanner.current);
+    printf("%0*X", BF_BYTE_HEX_REPR_LEN, (unsigned) *scanner.current);
     putchar(scanner.current == ths->current ? ']' : ' ');
     putchar(scanner.current == scanner.end - 1 ? '|' : ' ');
 

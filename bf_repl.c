@@ -16,7 +16,6 @@
 
 
 #include <stdio.h>
-#include <limits.h>
 #include <string.h>
 
 #include "bf.h"
@@ -40,11 +39,6 @@
 
 #ifndef BF_TEST_MEMORY_INPUT_SIZE
 #define BF_TEST_MEMORY_INPUT_SIZE  (sizeof BF_TEST_MEMORY_INPUT)
-#endif
-
-
-#if (CHAR_BIT != 8)
-#error function bf_format_16() only works when a byte has only 8 bits.
 #endif
 
 
