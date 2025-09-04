@@ -24,7 +24,7 @@
 typedef struct {
     const bf_byte_t  *ptr;
     size_t            num_left;
-} bf_run_memory_ctx;
+} bf_run_memory_ctx_s;
 
 
 static const char *bf_find_right_square_bracket(const char *in_op);
@@ -210,9 +210,9 @@ bf_run_file(bf_s *ths, const char *command, FILE *in_file,
 static int
 bf_reader_memory(void *stream)
 {
-    bf_run_memory_ctx  *pctx;
+    bf_run_memory_ctx_s  *pctx;
 
-    pctx = (bf_run_memory_ctx *) stream;
+    pctx = (bf_run_memory_ctx_s *) stream;
 
     if (pctx->num_left == 0) {
         return EOF;
@@ -230,7 +230,7 @@ int
 bf_run_memory(bf_s *ths, const char *command, const bf_byte_t *mem,
     size_t mem_size, bf_handler_t handler, void *out_stream)
 {
-    bf_run_memory_ctx  ctx;
+    bf_run_memory_ctx_s  ctx;
 
     ctx.ptr = mem;
     ctx.num_left = mem_size;
